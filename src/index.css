@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #09090b;
+    color: #f4f4f5;
+  }
+  
+  ::selection {
+    background-color: #ea580c;
+    color: #ffffff;
+  }
+}
+
+/* Custom modern scrollbars with black & orange accents */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+/* Always-visible horizontal scrollbar for LED Calculator & Data Tables on mobile/desktop */
+.led-scroll-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #f97316 #18181b;
+}
+.led-scroll-container::-webkit-scrollbar {
+  height: 8px;
+  display: block;
+}
+.led-scroll-container::-webkit-scrollbar-track {
+  background: #18181b;
+  border-radius: 9999px;
+  border: 1px solid #27272a;
+}
+.led-scroll-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #ea580c, #f97316);
+  border-radius: 9999px;
+  border: 1px solid #18181b;
+}
+.led-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #fb923c;
+}
+
+/* Range input styled as interactive horizontal scroll bar */
+.led-scrollbar-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.led-scrollbar-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 48px;
+  height: 8px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #ea580c, #f97316);
+  cursor: grab;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.5);
+}
+.led-scrollbar-range::-moz-range-thumb {
+  width: 48px;
+  height: 8px;
+  border: none;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #ea580c, #f97316);
+  cursor: grab;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.5);
+}
+
+/* Print Styles for Crisp PDF & Physical Prints with Exact Orange/White Colors */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Hide app shell, navbar, buttons, background overlays */
+  nav,
+  header,
+  aside,
+  .no-print,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Force background colors (orange headers, zebra stripes) to print accurately */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 8mm 10mm;
+  }
+
+  /* Prevent awkward page break cuts inside table rows */
+  tr, .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+}
+
+/* Scanner styling & laser animation */
+@keyframes laser-sweep {
+  0% {
+    top: 6%;
+    opacity: 0.7;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.7;
+  }
+}
+
+.animate-laser {
+  animation: laser-sweep 2s ease-in-out infinite;
+}
+
+#glpro-qr-scanner {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 260px !important;
+  border: none !important;
+  background-color: #000000 !important;
+}
+
+#glpro-qr-scanner video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+#glpro-qr-scanner canvas {
+  display: none !important;
+}
+
+#glpro-qr-scanner img,
+#glpro-qr-scanner__dashboard_section_csr,
+#glpro-qr-scanner__header_message {
+  display: none !important;
+}

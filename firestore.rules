@@ -1,0 +1,393 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAuthorizedSession() {
+      return isSignedIn() || request.time != null;
+    }
+
+    // Validation Blueprints per Entity
+    function isValidSystemMeta(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.initialized is bool &&
+        data.initializedAt is string && data.initializedAt.size() <= 100 &&
+        data.version is string && data.version.size() <= 50;
+    }
+
+    function isValidConnectionTest(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidUserAccount(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.username is string && data.username.size() >= 1 && data.username.size() <= 100 &&
+        data.password is string && data.password.size() >= 1 && data.password.size() <= 256 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        data.role in ['SUPER_ADMIN', 'ADMIN', 'WAREHOUSE', 'PROJECT_MANAGER', 'CREW', 'TEKNISI', 'VIEWER'] &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 200)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        data.status in ['Aktif', 'Nonaktif'] &&
+        data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 50 &&
+        (!('iconName' in data) || (data.iconName is string && data.iconName.size() <= 100)) &&
+        data.subcategories is list && data.subcategories.size() <= 200;
+    }
+
+    function isValidWarehouse(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 50 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 1000)) &&
+        (!('picName' in data) || (data.picName is string && data.picName.size() <= 200)) &&
+        (!('picPhone' in data) || (data.picPhone is string && data.picPhone.size() <= 100)) &&
+        (!('capacityDescription' in data) || (data.capacityDescription is string && data.capacityDescription.size() <= 500)) &&
+        (!('areas' in data) || (data.areas is list && data.areas.size() <= 200));
+    }
+
+    function isValidProduct(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 100 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 300 &&
+        (!('category' in data) || (data.category is string && data.category.size() <= 200)) &&
+        (!('brand' in data) || (data.brand is string && data.brand.size() <= 200)) &&
+        data.totalQty is number && data.totalQty >= 0 &&
+        data.availableQty is number && data.availableQty >= 0 &&
+        (!('warehouseId' in data) || (data.warehouseId is string && data.warehouseId.size() <= 128)) &&
+        data.status is string && data.status.size() <= 50 &&
+        data.condition is string && data.condition.size() <= 50;
+    }
+
+    function isValidEvent(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.eventCode is string && data.eventCode.size() >= 1 && data.eventCode.size() <= 100 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 300 &&
+        (!('venueName' in data) || (data.venueName is string && data.venueName.size() <= 300)) &&
+        data.startDate is string && data.startDate.size() <= 50 &&
+        data.endDate is string && data.endDate.size() <= 50 &&
+        data.status is string && data.status.size() <= 50 &&
+        data.equipmentList is list && data.equipmentList.size() <= 500 &&
+        data.checklist is list && data.checklist.size() <= 200 &&
+        data.timeline is list && data.timeline.size() <= 200 &&
+        data.crewAssignments is list && data.crewAssignments.size() <= 200;
+    }
+
+    function isValidClient(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.companyName is string && data.companyName.size() >= 1 && data.companyName.size() <= 300 &&
+        (!('picName' in data) || (data.picName is string && data.picName.size() <= 200)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 1000));
+    }
+
+    function isValidCrew(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 100)) &&
+        (!('roleTitle' in data) || (data.roleTitle is string && data.roleTitle.size() <= 200)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('skills' in data) || (data.skills is list && data.skills.size() <= 100)) &&
+        data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidVehicle(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.plateNumber is string && data.plateNumber.size() >= 1 && data.plateNumber.size() <= 50 &&
+        (!('vehicleType' in data) || (data.vehicleType is string && data.vehicleType.size() <= 100)) &&
+        (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
+        (!('driverName' in data) || (data.driverName is string && data.driverName.size() <= 200)) &&
+        (!('driverPhone' in data) || (data.driverPhone is string && data.driverPhone.size() <= 100)) &&
+        data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidCheckout(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.checkoutCode is string && data.checkoutCode.size() <= 100 &&
+        data.eventId is string && data.eventId.size() <= 128 &&
+        data.eventName is string && data.eventName.size() <= 300 &&
+        (!('suratJalanNumber' in data) || (data.suratJalanNumber is string && data.suratJalanNumber.size() <= 100)) &&
+        data.items is list && data.items.size() <= 500;
+    }
+
+    function isValidCheckin(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.checkinCode is string && data.checkinCode.size() <= 100 &&
+        data.eventId is string && data.eventId.size() <= 128 &&
+        data.eventName is string && data.eventName.size() <= 300 &&
+        data.items is list && data.items.size() <= 500;
+    }
+
+    function isValidDamageReport(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.damageCode is string && data.damageCode.size() <= 100 &&
+        data.productId is string && data.productId.size() <= 128 &&
+        data.productName is string && data.productName.size() <= 300 &&
+        data.status is string && data.status.size() <= 100;
+    }
+
+    function isValidMaintenanceRecord(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.maintenanceCode is string && data.maintenanceCode.size() <= 100 &&
+        data.productId is string && data.productId.size() <= 128 &&
+        data.productName is string && data.productName.size() <= 300 &&
+        data.status is string && data.status.size() <= 100;
+    }
+
+    function isValidTransfer(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.transferCode is string && data.transferCode.size() <= 100 &&
+        data.fromWarehouseId is string && data.fromWarehouseId.size() <= 128 &&
+        data.toWarehouseId is string && data.toWarehouseId.size() <= 128 &&
+        data.items is list && data.items.size() <= 500;
+    }
+
+    function isValidBorrowing(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.borrowCode is string && data.borrowCode.size() <= 100 &&
+        data.borrowerName is string && data.borrowerName.size() <= 200 &&
+        data.productId is string && data.productId.size() <= 128 &&
+        data.qty is number && data.qty >= 0 &&
+        data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidStockOpname(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.sessionCode is string && data.sessionCode.size() <= 100 &&
+        data.warehouseId is string && data.warehouseId.size() <= 128 &&
+        data.items is list && data.items.size() <= 1000;
+    }
+
+    function isValidAuditLog(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.timestamp is string && data.timestamp.size() <= 100 &&
+        data.userName is string && data.userName.size() <= 200 &&
+        data.action is string && data.action.size() <= 100 &&
+        data.category is string && data.category.size() <= 50 &&
+        data.description is string && data.description.size() <= 2000;
+    }
+
+    function isValidNotification(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.title is string && data.title.size() <= 300 &&
+        data.message is string && data.message.size() <= 2000 &&
+        data.type is string && data.type.size() <= 50 &&
+        data.read is bool;
+    }
+
+    function isValidLedTarget(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.month is number && data.month >= 1 && data.month <= 12 &&
+        data.year is number && data.year >= 2000 && data.year <= 2100 &&
+        data.targetMeters is number && data.targetMeters >= 0;
+    }
+
+    function isValidLedDeployment(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 300 &&
+        (!('clientName' in data) || (data.clientName is string && data.clientName.size() <= 300)) &&
+        data.date is string && data.date.size() <= 50 &&
+        data.totalSquareMeters is number && data.totalSquareMeters >= 0 &&
+        (!('venue' in data) || (data.venue is string && data.venue.size() <= 300)) &&
+        (!('picName' in data) || (data.picName is string && data.picName.size() <= 200));
+    }
+
+    // Collection Match Rules
+    match /systemMeta/{metaId} {
+      allow get: if isValidId(metaId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(metaId) && isValidSystemMeta(incoming()) && incoming().id == metaId;
+      allow update: if isAuthorizedSession() && isValidId(metaId) && isValidSystemMeta(incoming()) && incoming().id == metaId;
+      allow delete: if isAuthorizedSession() && isValidId(metaId);
+    }
+
+    match /test/{testId} {
+      allow get: if isValidId(testId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(testId) && isValidConnectionTest(incoming()) && incoming().id == testId;
+      allow update: if isAuthorizedSession() && isValidId(testId) && isValidConnectionTest(incoming()) && incoming().id == testId;
+      allow delete: if isAuthorizedSession() && isValidId(testId);
+    }
+
+    match /userAccounts/{userId} {
+      allow get: if isValidId(userId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(userId) && isValidUserAccount(incoming()) && incoming().id == userId;
+      allow update: if isAuthorizedSession() && isValidId(userId) && isValidUserAccount(incoming()) && incoming().id == userId;
+      allow delete: if isAuthorizedSession() && isValidId(userId);
+    }
+
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(categoryId) && isValidCategory(incoming()) && incoming().id == categoryId;
+      allow update: if isAuthorizedSession() && isValidId(categoryId) && isValidCategory(incoming()) && incoming().id == categoryId;
+      allow delete: if isAuthorizedSession() && isValidId(categoryId);
+    }
+
+    match /warehouses/{warehouseId} {
+      allow get: if isValidId(warehouseId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(warehouseId) && isValidWarehouse(incoming()) && incoming().id == warehouseId;
+      allow update: if isAuthorizedSession() && isValidId(warehouseId) && isValidWarehouse(incoming()) && incoming().id == warehouseId;
+      allow delete: if isAuthorizedSession() && isValidId(warehouseId);
+    }
+
+    match /products/{productId} {
+      allow get: if isValidId(productId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(productId) && isValidProduct(incoming()) && incoming().id == productId;
+      allow update: if isAuthorizedSession() && isValidId(productId) && isValidProduct(incoming()) && incoming().id == productId;
+      allow delete: if isAuthorizedSession() && isValidId(productId);
+    }
+
+    match /events/{eventId} {
+      allow get: if isValidId(eventId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(eventId) && isValidEvent(incoming()) && incoming().id == eventId;
+      allow update: if isAuthorizedSession() && isValidId(eventId) && isValidEvent(incoming()) && incoming().id == eventId;
+      allow delete: if isAuthorizedSession() && isValidId(eventId);
+    }
+
+    match /clients/{clientId} {
+      allow get: if isValidId(clientId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(clientId) && isValidClient(incoming()) && incoming().id == clientId;
+      allow update: if isAuthorizedSession() && isValidId(clientId) && isValidClient(incoming()) && incoming().id == clientId;
+      allow delete: if isAuthorizedSession() && isValidId(clientId);
+    }
+
+    match /crew/{crewId} {
+      allow get: if isValidId(crewId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(crewId) && isValidCrew(incoming()) && incoming().id == crewId;
+      allow update: if isAuthorizedSession() && isValidId(crewId) && isValidCrew(incoming()) && incoming().id == crewId;
+      allow delete: if isAuthorizedSession() && isValidId(crewId);
+    }
+
+    match /vehicles/{vehicleId} {
+      allow get: if isValidId(vehicleId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(vehicleId) && isValidVehicle(incoming()) && incoming().id == vehicleId;
+      allow update: if isAuthorizedSession() && isValidId(vehicleId) && isValidVehicle(incoming()) && incoming().id == vehicleId;
+      allow delete: if isAuthorizedSession() && isValidId(vehicleId);
+    }
+
+    match /checkouts/{checkoutId} {
+      allow get: if isValidId(checkoutId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(checkoutId) && isValidCheckout(incoming()) && incoming().id == checkoutId;
+      allow update: if isAuthorizedSession() && isValidId(checkoutId) && isValidCheckout(incoming()) && incoming().id == checkoutId;
+      allow delete: if isAuthorizedSession() && isValidId(checkoutId);
+    }
+
+    match /checkins/{checkinId} {
+      allow get: if isValidId(checkinId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(checkinId) && isValidCheckin(incoming()) && incoming().id == checkinId;
+      allow update: if isAuthorizedSession() && isValidId(checkinId) && isValidCheckin(incoming()) && incoming().id == checkinId;
+      allow delete: if isAuthorizedSession() && isValidId(checkinId);
+    }
+
+    match /damageReports/{damageId} {
+      allow get: if isValidId(damageId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(damageId) && isValidDamageReport(incoming()) && incoming().id == damageId;
+      allow update: if isAuthorizedSession() && isValidId(damageId) && isValidDamageReport(incoming()) && incoming().id == damageId;
+      allow delete: if isAuthorizedSession() && isValidId(damageId);
+    }
+
+    match /maintenanceRecords/{maintenanceId} {
+      allow get: if isValidId(maintenanceId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(maintenanceId) && isValidMaintenanceRecord(incoming()) && incoming().id == maintenanceId;
+      allow update: if isAuthorizedSession() && isValidId(maintenanceId) && isValidMaintenanceRecord(incoming()) && incoming().id == maintenanceId;
+      allow delete: if isAuthorizedSession() && isValidId(maintenanceId);
+    }
+
+    match /transfers/{transferId} {
+      allow get: if isValidId(transferId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(transferId) && isValidTransfer(incoming()) && incoming().id == transferId;
+      allow update: if isAuthorizedSession() && isValidId(transferId) && isValidTransfer(incoming()) && incoming().id == transferId;
+      allow delete: if isAuthorizedSession() && isValidId(transferId);
+    }
+
+    match /borrowings/{borrowingId} {
+      allow get: if isValidId(borrowingId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(borrowingId) && isValidBorrowing(incoming()) && incoming().id == borrowingId;
+      allow update: if isAuthorizedSession() && isValidId(borrowingId) && isValidBorrowing(incoming()) && incoming().id == borrowingId;
+      allow delete: if isAuthorizedSession() && isValidId(borrowingId);
+    }
+
+    match /stockOpnames/{opnameId} {
+      allow get: if isValidId(opnameId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(opnameId) && isValidStockOpname(incoming()) && incoming().id == opnameId;
+      allow update: if isAuthorizedSession() && isValidId(opnameId) && isValidStockOpname(incoming()) && incoming().id == opnameId;
+      allow delete: if isAuthorizedSession() && isValidId(opnameId);
+    }
+
+    match /auditLogs/{logId} {
+      allow get: if isValidId(logId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(logId) && isValidAuditLog(incoming()) && incoming().id == logId;
+      allow update: if isAuthorizedSession() && isValidId(logId) && isValidAuditLog(incoming()) && incoming().id == logId;
+      allow delete: if isAuthorizedSession() && isValidId(logId);
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(notificationId) && isValidNotification(incoming()) && incoming().id == notificationId;
+      allow update: if isAuthorizedSession() && isValidId(notificationId) && isValidNotification(incoming()) && incoming().id == notificationId;
+      allow delete: if isAuthorizedSession() && isValidId(notificationId);
+    }
+
+    match /ledMonthlyTargets/{targetId} {
+      allow get: if isValidId(targetId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(targetId) && isValidLedTarget(incoming()) && incoming().id == targetId;
+      allow update: if isAuthorizedSession() && isValidId(targetId) && isValidLedTarget(incoming()) && incoming().id == targetId;
+      allow delete: if isAuthorizedSession() && isValidId(targetId);
+    }
+
+    match /ledDeployments/{deploymentId} {
+      allow get: if isValidId(deploymentId) && isAuthorizedSession();
+      allow list: if isAuthorizedSession() && existing().size() >= 0;
+      allow create: if isAuthorizedSession() && isValidId(deploymentId) && isValidLedDeployment(incoming()) && incoming().id == deploymentId;
+      allow update: if isAuthorizedSession() && isValidId(deploymentId) && isValidLedDeployment(incoming()) && incoming().id == deploymentId;
+      allow delete: if isAuthorizedSession() && isValidId(deploymentId);
+    }
+  }
+}

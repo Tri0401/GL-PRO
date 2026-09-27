@@ -1,0 +1,10 @@
+{
+  "name": "GL PRO",
+  "description": "Sistem terpadu manajemen inventaris, multi-gudang, QR code scanning, operasional event, check-out, check-in, inspeksi kondisi, maintenance, dan surat jalan untuk CV Multimedia \u0026 Event Production.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

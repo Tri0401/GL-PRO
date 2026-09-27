@@ -1,0 +1,413 @@
+{
+  "entities": {
+    "SystemMeta": {
+      "title": "SystemMeta",
+      "description": "Metadata state for Firestore initialization and migration tracking.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "initialized": { "type": "boolean" },
+        "initializedAt": { "type": "string", "maxLength": 100 },
+        "version": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "initialized", "initializedAt", "version"]
+    },
+    "ConnectionTest": {
+      "title": "ConnectionTest",
+      "description": "Connectivity verification document for Firestore startup health check.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "status"]
+    },
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "GL PRO Production user account with role-based access control.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "username": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "password": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "email": { "type": "string", "maxLength": 200 },
+        "role": {
+          "type": "string",
+          "enum": ["SUPER_ADMIN", "ADMIN", "WAREHOUSE", "PROJECT_MANAGER", "CREW", "TEKNISI", "VIEWER"]
+        },
+        "division": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "createdAt": { "type": "string", "maxLength": 100 },
+        "lastLogin": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "username", "password", "name", "email", "role", "division", "phone", "status", "createdAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Equipment master category and subcategories.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "code": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "iconName": { "type": "string", "maxLength": 100 },
+        "subcategories": { "type": "array" }
+      },
+      "required": ["id", "name", "code", "iconName", "subcategories"]
+    },
+    "Warehouse": {
+      "title": "Warehouse",
+      "description": "Multi-warehouse storage location and PIC details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "address": { "type": "string", "maxLength": 1000 },
+        "picName": { "type": "string", "maxLength": 200 },
+        "picPhone": { "type": "string", "maxLength": 100 },
+        "capacityDescription": { "type": "string", "maxLength": 500 },
+        "areas": { "type": "array" }
+      },
+      "required": ["id", "code", "name", "address", "picName", "picPhone", "capacityDescription", "areas"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Master equipment inventory item and real-time stock quantities.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "category": { "type": "string", "maxLength": 200 },
+        "subcategory": { "type": "string", "maxLength": 200 },
+        "brand": { "type": "string", "maxLength": 200 },
+        "model": { "type": "string", "maxLength": 200 },
+        "isIndividual": { "type": "boolean" },
+        "unit": { "type": "string", "maxLength": 50 },
+        "totalQty": { "type": "number" },
+        "availableQty": { "type": "number" },
+        "reservedQty": { "type": "number" },
+        "inUseQty": { "type": "number" },
+        "inTransitQty": { "type": "number" },
+        "inMaintenanceQty": { "type": "number" },
+        "damagedQty": { "type": "number" },
+        "lostQty": { "type": "number" },
+        "minQty": { "type": "number" },
+        "warehouseId": { "type": "string", "maxLength": 128 },
+        "area": { "type": "string", "maxLength": 200 },
+        "rack": { "type": "string", "maxLength": 100 },
+        "shelf": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 50 },
+        "condition": { "type": "string", "maxLength": 50 },
+        "procurementYear": { "type": "number" },
+        "imageUrl": { "type": "string", "maxLength": 2000 },
+        "barcode": { "type": "string", "maxLength": 150 },
+        "qrCode": { "type": "string", "maxLength": 150 }
+      },
+      "required": ["id", "code", "name", "category", "brand", "totalQty", "availableQty", "warehouseId", "status", "condition"]
+    },
+    "EventData": {
+      "title": "EventData",
+      "description": "Operational event schedule, reserved equipment list, checklist, timeline, and crew assignments.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "eventCode": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "clientName": { "type": "string", "maxLength": 300 },
+        "venueName": { "type": "string", "maxLength": 300 },
+        "venueAddress": { "type": "string", "maxLength": 1000 },
+        "startDate": { "type": "string", "maxLength": 50 },
+        "endDate": { "type": "string", "maxLength": 50 },
+        "picEventName": { "type": "string", "maxLength": 200 },
+        "projectManagerName": { "type": "string", "maxLength": 200 },
+        "status": { "type": "string", "maxLength": 50 },
+        "equipmentList": { "type": "array" },
+        "checklist": { "type": "array" },
+        "timeline": { "type": "array" },
+        "crewAssignments": { "type": "array" }
+      },
+      "required": ["id", "eventCode", "name", "venueName", "startDate", "endDate", "status", "equipmentList", "checklist", "timeline", "crewAssignments"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Corporate client and event organizer partner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "companyName": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "picName": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "address": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "companyName", "picName", "phone", "email", "address"]
+    },
+    "CrewMember": {
+      "title": "CrewMember",
+      "description": "Technical crew and production personnel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "division": { "type": "string", "maxLength": 100 },
+        "roleTitle": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 100 },
+        "skills": { "type": "array" },
+        "status": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "division", "roleTitle", "phone", "skills", "status"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Logistics fleet vehicle and driver information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "plateNumber": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "vehicleType": { "type": "string", "maxLength": 100 },
+        "brand": { "type": "string", "maxLength": 100 },
+        "driverName": { "type": "string", "maxLength": 200 },
+        "driverPhone": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "plateNumber", "vehicleType", "brand", "driverName", "driverPhone", "status"]
+    },
+    "CheckoutRecord": {
+      "title": "CheckoutRecord",
+      "description": "Equipment check-out transaction and Surat Jalan record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "checkoutCode": { "type": "string", "maxLength": 100 },
+        "eventId": { "type": "string", "maxLength": 128 },
+        "eventName": { "type": "string", "maxLength": 300 },
+        "suratJalanNumber": { "type": "string", "maxLength": 100 },
+        "items": { "type": "array" }
+      },
+      "required": ["id", "checkoutCode", "eventId", "eventName", "suratJalanNumber", "items"]
+    },
+    "CheckinRecord": {
+      "title": "CheckinRecord",
+      "description": "Equipment return check-in and reconciliation record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "checkinCode": { "type": "string", "maxLength": 100 },
+        "eventId": { "type": "string", "maxLength": 128 },
+        "eventName": { "type": "string", "maxLength": 300 },
+        "items": { "type": "array" }
+      },
+      "required": ["id", "checkinCode", "eventId", "eventName", "items"]
+    },
+    "DamageReport": {
+      "title": "DamageReport",
+      "description": "Equipment inspection and damage report.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "damageCode": { "type": "string", "maxLength": 100 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "productName": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "damageCode", "productId", "productName", "status"]
+    },
+    "MaintenanceRecord": {
+      "title": "MaintenanceRecord",
+      "description": "Technician service and maintenance record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "maintenanceCode": { "type": "string", "maxLength": 100 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "productName": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "maintenanceCode", "productId", "productName", "status"]
+    },
+    "TransferRecord": {
+      "title": "TransferRecord",
+      "description": "Inter-warehouse equipment transfer record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "transferCode": { "type": "string", "maxLength": 100 },
+        "fromWarehouseId": { "type": "string", "maxLength": 128 },
+        "toWarehouseId": { "type": "string", "maxLength": 128 },
+        "items": { "type": "array" }
+      },
+      "required": ["id", "transferCode", "fromWarehouseId", "toWarehouseId", "items"]
+    },
+    "BorrowingRecord": {
+      "title": "BorrowingRecord",
+      "description": "Equipment borrowing and return record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "borrowCode": { "type": "string", "maxLength": 100 },
+        "borrowerName": { "type": "string", "maxLength": 200 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "qty": { "type": "number" },
+        "status": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "borrowCode", "borrowerName", "productId", "qty", "status"]
+    },
+    "StockOpnameSession": {
+      "title": "StockOpnameSession",
+      "description": "Physical warehouse stock audit session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sessionCode": { "type": "string", "maxLength": 100 },
+        "warehouseId": { "type": "string", "maxLength": 128 },
+        "items": { "type": "array" }
+      },
+      "required": ["id", "sessionCode", "warehouseId", "items"]
+    },
+    "AuditLogItem": {
+      "title": "AuditLogItem",
+      "description": "Immutable operational audit log entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "timestamp": { "type": "string", "maxLength": 100 },
+        "userName": { "type": "string", "maxLength": 200 },
+        "action": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 2000 }
+      },
+      "required": ["id", "timestamp", "userName", "action", "category", "description"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "System operational notification alert.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 300 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "type": { "type": "string", "maxLength": 50 },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "title", "message", "type", "read"]
+    },
+    "MonthlyLedTarget": {
+      "title": "MonthlyLedTarget",
+      "description": "Monthly LED deployment square-meter target.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "month": { "type": "number" },
+        "year": { "type": "number" },
+        "targetMeters": { "type": "number" }
+      },
+      "required": ["id", "month", "year", "targetMeters"]
+    },
+    "LedDeploymentRecord": {
+      "title": "LedDeploymentRecord",
+      "description": "LED screen deployment record per event.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "eventName": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "clientName": { "type": "string", "maxLength": 300 },
+        "date": { "type": "string", "maxLength": 50 },
+        "totalSquareMeters": { "type": "number" },
+        "venue": { "type": "string", "maxLength": 300 },
+        "picName": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "eventName", "clientName", "date", "totalSquareMeters", "venue", "picName"]
+    }
+  },
+  "firestore": {
+    "/systemMeta/{metaId}": {
+      "schema": "SystemMeta",
+      "description": "Stores database initialization and migration state."
+    },
+    "/test/{testId}": {
+      "schema": "ConnectionTest",
+      "description": "Stores connectivity health check documents."
+    },
+    "/userAccounts/{userId}": {
+      "schema": "UserAccount",
+      "description": "Stores GL PRO Production user accounts and RBAC roles."
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Stores equipment categories and subcategories."
+    },
+    "/warehouses/{warehouseId}": {
+      "schema": "Warehouse",
+      "description": "Stores warehouse locations and PIC details."
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Stores master inventory products and real-time stock quantities."
+    },
+    "/events/{eventId}": {
+      "schema": "EventData",
+      "description": "Stores operational events, reserved equipment, checklists, and crew."
+    },
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Stores client companies and contact persons."
+    },
+    "/crew/{crewId}": {
+      "schema": "CrewMember",
+      "description": "Stores technical crew members and divisions."
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Stores fleet vehicles and driver assignments."
+    },
+    "/checkouts/{checkoutId}": {
+      "schema": "CheckoutRecord",
+      "description": "Stores equipment check-out transactions and Surat Jalan."
+    },
+    "/checkins/{checkinId}": {
+      "schema": "CheckinRecord",
+      "description": "Stores equipment check-in and return reconciliations."
+    },
+    "/damageReports/{damageId}": {
+      "schema": "DamageReport",
+      "description": "Stores equipment damage and inspection reports."
+    },
+    "/maintenanceRecords/{maintenanceId}": {
+      "schema": "MaintenanceRecord",
+      "description": "Stores equipment service and maintenance records."
+    },
+    "/transfers/{transferId}": {
+      "schema": "TransferRecord",
+      "description": "Stores inter-warehouse transfer records."
+    },
+    "/borrowings/{borrowingId}": {
+      "schema": "BorrowingRecord",
+      "description": "Stores equipment borrowing and return records."
+    },
+    "/stockOpnames/{opnameId}": {
+      "schema": "StockOpnameSession",
+      "description": "Stores physical stock opname audit sessions."
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLogItem",
+      "description": "Stores immutable operational audit trail entries."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "NotificationItem",
+      "description": "Stores real-time operational notifications."
+    },
+    "/ledMonthlyTargets/{targetId}": {
+      "schema": "MonthlyLedTarget",
+      "description": "Stores monthly LED target square meters."
+    },
+    "/ledDeployments/{deploymentId}": {
+      "schema": "LedDeploymentRecord",
+      "description": "Stores event LED deployment records."
+    }
+  }
+}
